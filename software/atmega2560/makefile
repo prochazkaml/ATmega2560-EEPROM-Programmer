@@ -8,7 +8,7 @@
 # Type "make help" in the command line.
 
 # Input and Output File Names
-SKETCH  = EEPROM_Programmer_m328p.ino
+SKETCH  = EEPROM_Programmer_m2560.ino
 TARGET  = eeprom_programmer_m2560
 
 # Microcontroller Options
