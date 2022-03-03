@@ -7,8 +7,8 @@ Parallel EEPROM Programmer for SST29EE020 (and possibly others which use 128 byt
 - Utilizing the fast page write mode of the EEPROM
 - Binary data transmission
 
-![EEPROM_hw1.png](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw1.png)
-![EEPROM_hw2.png](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw2.png)
+![EEPROM_hw1.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw1.jpeg)
+![EEPROM_hw2.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw2.jpeg)
 
 # Hardware
 The heart of the EEPROM programmer is an ATmega2560 microcontroller. The address bus of the EEPROM (up to 20 bit in the current configuration, with modifications 32 bits are possible) as well as the data bus is controlled directly via the pins of the ATmega. The data connection to the PC runs via the hardware UART interface of the ATmega transfering the data in binary format with up to 500 Kbps.
