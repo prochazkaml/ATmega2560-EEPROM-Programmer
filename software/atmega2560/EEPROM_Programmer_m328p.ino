@@ -37,6 +37,9 @@
 // Project Files (Github):  https://github.com/wagiminator
 // License: http://creativecommons.org/licenses/by-sa/3.0/
 
+#ifndef __AVR_ATmega2560__
+#define __AVR_ATmega2560__
+#endif
 
 // Libraries
 #include <avr/io.h>
@@ -47,54 +50,46 @@
 #define IDENT           "EEPROM Programmer"
 
 // Pin and port definitions
-#define CONTROL_REG     DDRB
-#define CONTROL_PORT    PORTB
-#define DATAL_REG       DDRC
-#define DATAL_PORT      PORTC
-#define DATAL_INPUT     PINC
-#define DATAH_REG       DDRD
-#define DATAH_PORT      PORTD
-#define DATAH_INPUT     PIND
-#define LED_REG         DDRC
-#define LED_PORT        PORTC
-#define CE_REG          DDRC
-#define CE_PORT         PORTC
+#define CONTROL_REG     DDRG
+#define CONTROL_PORT    PORTG
+#define DATA_REG        DDRL
+#define DATA_PORT       PORTL
+#define DATA_INPUT      PINL
+#define LED_REG         DDRB
+#define LED_PORT        PORTB
+#define ADDL_REG        DDRA
+#define ADDL_PORT       PORTA
+#define ADDH_REG        DDRC
+#define ADDH_PORT       PORTC
+#define ADDE_REG        DDRB
+#define ADDE_PORT       PORTB
 
-#define DATA            (1<<PB3)              // MOSI (SI)
-#define LATCH           (1<<PB2)              // !SS  (RCK)
-#define CLOCK           (1<<PB5)              // SCK  (SCK)
+#define CHIP_ENABLE     (1<<PG2)              // EEPROM !CE
+#define WRITE_ENABLE    (1<<PG0)              // EEPROM !WE
+#define OUTPUT_ENABLE   (1<<PG1)              // EEPROM !OE
 
-#define CHIP_ENABLE     (1<<PC5)              // EEPROM !CE
-#define WRITE_ENABLE    (1<<PB0)              // EEPROM !WE
-#define OUTPUT_ENABLE   (1<<PB1)              // EEPROM !OE
-
-#define LED_READ        (1<<PC2)              // read indicator LED  
-#define LED_WRITE       (1<<PC3)              // write indicator LED
+#define LED_PIN         (1<<PB7)              // read indicator LED  
 
 // Macros
-#define ReadLEDon       LED_PORT |=  LED_READ
-#define ReadLEDoff      LED_PORT &= ~LED_READ
-#define WriteLEDon      LED_PORT |=  LED_WRITE
-#define WriteLEDoff     LED_PORT &= ~LED_WRITE
+#define LEDon           LED_PORT |=  LED_PIN
+#define LEDoff          LED_PORT &= ~LED_PIN
 
-#define enableChip      CE_PORT  &= ~CHIP_ENABLE
-#define disableChip     CE_PORT  |=  CHIP_ENABLE
+#define enableChip      CONTROL_PORT &= ~CHIP_ENABLE
+#define disableChip     CONTROL_PORT |=  CHIP_ENABLE
 #define enableOutput    CONTROL_PORT &= ~OUTPUT_ENABLE
 #define disableOutput   CONTROL_PORT |= OUTPUT_ENABLE
 #define enableWrite     CONTROL_PORT &= ~WRITE_ENABLE
 #define disableWrite    CONTROL_PORT |=  WRITE_ENABLE
 
-#define toggleLatch     {CONTROL_PORT |=  LATCH; CONTROL_PORT &= ~LATCH;}
-
-#define readDataBus     (DATAL_INPUT & 0b00000011) | (DATAH_INPUT & 0b11111100)
-#define setDataBusRead  {DATAL_REG &= 0b11111100; DATAH_REG &= 0b00000011;}
-#define setDataBusWrite {DATAL_REG |= 0b00000011; DATAH_REG |= 0b11111100;}
+#define readDataBus     DATA_INPUT
+#define setDataBusRead  { DATA_REG = 0x00; }
+#define setDataBusWrite { DATA_REG = 0xFF; }
 
 #define delay125ns      {asm volatile("nop"); asm volatile("nop");}
 
 // Buffers
-uint8_t pageBuffer[64];                       // page buffer
-char    cmdBuffer[16];                        // command buffer
+uint8_t pageBuffer[128];                       // page buffer
+char    cmdBuffer[32];                        // command buffer
 
 // -----------------------------------------------------------------------------
 // UART Implementation (1M BAUD)
@@ -105,8 +100,10 @@ char    cmdBuffer[16];                        // command buffer
 
 // UART init
 void UART_init(void) {
+  DDRE |= (1 << PE1);
   UCSR0B = (1<<RXEN0)  | (1<<TXEN0);          // enable RX and TX
   UCSR0C = (3<<UCSZ00);                       // 8 data bits, no parity, 1 stop bit
+  UBRR0 = 1;
 }
 
 // UART send data byte
@@ -128,7 +125,7 @@ void UART_println(const char *str) {
 
 // Reads command string via UART
 void readCommand() {
-  for(uint8_t i=0; i< 16; i++) cmdBuffer[i] = 0;  // clear command buffer
+  for(uint8_t i=0; i< 32; i++) cmdBuffer[i] = 0;  // clear command buffer
   char c; uint8_t idx = 0;                        // initialize variables
   
   // Read serial data until linebreak or buffer is full
@@ -137,7 +134,7 @@ void readCommand() {
       c = UART_read();
       cmdBuffer[idx++] = c;
     }
-  } while (c != '\n' && idx < 16);
+  } while (c != '\n' && idx < 32);
   cmdBuffer[idx - 1] = 0;                     // change last newline to '\0' termination
 }
 
@@ -159,8 +156,10 @@ void printByte(uint8_t value) {
   printNibble (value & 0x0f);
 }
 
-// Convert word into hex characters and print it via UART
-void printWord(uint16_t value) {
+// Convert long into hex characters and print it via UART
+void printLong(uint32_t value) {
+  printByte(value >> 24);
+  printByte(value >> 16);
   printByte(value >> 8);
   printByte(value);
 }
@@ -178,46 +177,36 @@ uint8_t hexByte(char* a) {
   return ((hexDigit(a[0]) << 4) + hexDigit(a[1]));
 }
 
-// Convert string containing a hex word into 16-bit value
-uint16_t hexWord(char* data) {
-  return ((hexDigit(data[0]) << 12) +
-          (hexDigit(data[1]) <<  8) +
-          (hexDigit(data[2]) <<  4) +
-          (hexDigit(data[3]))); 
+// Convert string containing a hex long into 32-bit value
+uint32_t hexLong(char* data) {
+  uint32_t val = 0;
+
+  uint8_t *valptr = (uint8_t*)(&val);
+
+  valptr[0] = hexByte(data + 6);
+  valptr[1] = hexByte(data + 4);
+  valptr[2] = hexByte(data + 2);
+  valptr[3] = hexByte(data + 0);
+
+  return val;
 }
 
 // -----------------------------------------------------------------------------
 // Low Level Communication with EEPROM
 // -----------------------------------------------------------------------------
 
-// Setup SPI for controlling shift registers for the address bus
-void SPI_init(void) {
-  CONTROL_REG   |=  (DATA | LATCH | CLOCK);   // set control pins as outputs
-  CONTROL_PORT  &= ~(DATA | LATCH | CLOCK);   // set control pins low
-  SPCR = (1<<SPE) | (1<<MSTR);                // start SPI as Master
-  SPSR = (1<<SPI2X);                          // set speed to F_CPU/2
-}
-
 // Shift out address by using hardware SPI
-void setAddress (uint16_t addr) { 
-  SPDR = addr >> 8;                           // high byte of address
-  while (!(SPSR & (1<<SPIF)));                // wait for SPI process to finish
-  SPDR = addr;                                // low byte of address
-  while (!(SPSR & (1<<SPIF)));                // wait for SPI process to finish
-  toggleLatch;                                // latch address bus
+void setAddress (uint32_t addr) { 
+  ADDL_PORT = addr;
+  ADDH_PORT = addr >> 8;
+  ADDE_PORT = (addr >> 16) & 0xF;
 }
 
 // Write a single byte to the EEPROM at the given address
-void setByte (uint16_t addr, uint8_t value) {
-  // shift out address with hardware SPI and set data bus at the same time
-  SPDR = addr >> 8;
-  DATAL_PORT = (DATAL_PORT & 0b11111100) | (value & 0b00000011);
-  while (!(SPSR & (1<<SPIF)));
-  SPDR = addr;
-  DATAH_PORT = (DATAH_PORT & 0b00000011) | (value & 0b11111100);
-  while (!(SPSR & (1<<SPIF)));
+void setByte (uint32_t addr, uint8_t value) {
+  setAddress(addr);
 
-  toggleLatch;                                // latch address bus
+  DATA_PORT = value;
 
   // write data byte to EEPROM
   enableWrite;                                // set low for write enable
@@ -234,7 +223,7 @@ void waitWriteCycle (uint8_t writtenByte) {
 }
 
 // Read a byte from the EEPROM at the given address
-uint8_t readDataByte(uint16_t addr) { 
+uint8_t readDataByte(uint32_t addr) { 
   enableOutput;                               // EEPROM output enable
   setAddress (addr);                          // set address bus
   delay125ns;                                 // wait for output valid
@@ -244,7 +233,7 @@ uint8_t readDataByte(uint16_t addr) {
 }
 
 // Write a byte to the EEPROM at the given address
-void writeDataByte (uint16_t addr, uint8_t value) {
+void writeDataByte (uint32_t addr, uint8_t value) {
   setDataBusWrite;                            // set data bus pins as output  
   setByte (addr, value);                      // write byte to EEPROM
   setDataBusRead;                             // release data bus (set as input)
@@ -252,9 +241,9 @@ void writeDataByte (uint16_t addr, uint8_t value) {
 }
 
 // Write up to 64 bytes; bytes have to be page aligned (28C256 and 26C64B only)
-void writePage (uint16_t addr, uint8_t count) {
+void writePage (uint32_t addr, uint8_t count) {
   if (!count) return;                         // return if no bytes to write
-  WriteLEDon;                                 // turn on write LED
+  LEDon;                                      // turn on write LED
   setDataBusWrite;                            // set data bus pins as output
   
   for (uint8_t i=0; i<count; i++) {           // write <count> numbers of bytes 
@@ -263,7 +252,7 @@ void writePage (uint16_t addr, uint8_t count) {
 
   setDataBusRead;                             // release data bus (set as input)
   waitWriteCycle (pageBuffer[count-1]);       // wait for write cycle to finish
-  WriteLEDoff;                                // turn off write LED
+  LEDoff;                                     // turn off write LED
 }
 
 // -----------------------------------------------------------------------------
@@ -294,12 +283,12 @@ void enableWriteProtection() {
 }
 
 // Fill specified part of EEPROM memory with the given value
-void fillMemory(uint16_t addr, uint16_t dataLength, uint8_t value) {
-  uint16_t addr2; uint8_t  count;             // initialize variables
+void fillMemory(uint32_t addr, uint32_t dataLength, uint8_t value) {
+  uint32_t addr2; uint8_t  count;             // initialize variables
   for (uint8_t i=0; i<64; i++) pageBuffer[i] = value; // fill page buffer with value
   disableWriteProtection();                   // disable write protection
   while (dataLength) {                        // repeat until all bytes written
-    addr2 = addr | 0x3f;                      // addr2 = end of current page
+    addr2 = addr | 0x7f;                      // addr2 = end of current page
     count = addr2 - addr + 1;                 // number of bytes to fill rest of page
     if (count > dataLength) count = dataLength; // make sure not to write too many bytes
     writePage (addr, count);                  // fill page with data
@@ -310,12 +299,12 @@ void fillMemory(uint16_t addr, uint16_t dataLength, uint8_t value) {
 }
 
 // Read content of EEPROM and print hex dump via UART
-void printContents(uint16_t addr, uint16_t count) {
+void printContents(uint32_t addr, uint32_t count) {
   static char ascii[17];                      // buffer string
   ascii[16] = 0;                              // string terminator
-  ReadLEDon;                                  // turn on read LED
-  for (uint16_t base = 0; base < count; base += 16) {
-    printWord(base); UART_print(":  ");
+  LEDon;                                      // turn on read LED
+  for (uint32_t base = 0; base < count; base += 16) {
+    printLong(base); UART_print(":  ");
     for (uint8_t offset = 0; offset <= 15; offset += 1) {
       uint8_t databyte = readDataByte(addr + base + offset);
       if (databyte > 31 && databyte < 127) ascii[offset] = databyte;
@@ -325,21 +314,21 @@ void printContents(uint16_t addr, uint16_t count) {
     }
     UART_print(" "); UART_println(ascii);
   }
-  ReadLEDoff;                                 // turn off read LED
+  LEDoff;                                     // turn off read LED
 }
 
 // Read content of EEPROM and send it as binary data via UART
-void readBinary(uint16_t addr, uint16_t count) {
-  ReadLEDon;
+void readBinary(uint32_t addr, uint32_t count) {
+  LEDon;
   while (count) {
     UART_write(readDataByte(addr++));
     count--;
   }
-  ReadLEDoff;
+  LEDoff;
 }
 
 // Write binary data from UART to a memory page
-void writePageBinary(uint16_t startAddr, uint8_t count) {
+void writePageBinary(uint32_t startAddr, uint8_t count) {
   for (uint8_t i=0; i<count; i++) {
     while (!UART_available());
     pageBuffer[i] = UART_read();
@@ -354,22 +343,22 @@ void writePageBinary(uint16_t startAddr, uint8_t count) {
 int main(void) {
   // Setup EEPROM control pins
   CONTROL_PORT |= (WRITE_ENABLE | OUTPUT_ENABLE);   // set high to disable
-  CONTROL_REG  |= (WRITE_ENABLE | OUTPUT_ENABLE);   // set pins as output
-  CE_REG  |=  CHIP_ENABLE;                          // set CE pin as output
-  CE_PORT &= ~CHIP_ENABLE;                          // set low to enable
+  CONTROL_REG  |= (WRITE_ENABLE | OUTPUT_ENABLE | CHIP_ENABLE);   // set pins as output
+  CONTROL_PORT &= ~CHIP_ENABLE;                     // set low to enable
   
   // Setup LED pins
-  LED_REG   |=  (LED_READ | LED_WRITE);       // set LED pins as output
-  LED_PORT  &= ~(LED_READ | LED_WRITE);       // turn off LEDs
+  LED_REG   |=  (LED_PIN);                          // set LED pin as output
+  LED_PORT  &= ~(LED_PIN);                          // turn off LED
   
   // Setup data bus
-  DATAL_REG &= 0b11111100;                    // low part of data bus as input
-  DATAH_REG &= 0b00000011;                    // high part of data bus as input
+  DATA_REG = 0x00;
 
-  // Setup SPI for controlling shift registers for the address bus
-  SPI_init();
+  // Setup address bus
+  ADDL_REG = 0xFF;
+  ADDH_REG = 0xFF;
+  ADDE_REG = 0x0F;
 
-  // Setup UART for 1M BAUD
+  // Setup UART for 500k BAUD
   UART_init();
 
   // Loop
@@ -377,12 +366,11 @@ int main(void) {
     UART_println("Ready");
     readCommand();
     char cmd = cmdBuffer[0];
-    uint16_t startAddr = hexWord(cmdBuffer+2);
-    uint16_t endAddr   = hexWord(cmdBuffer+7);
-    uint8_t  ctrlByte  = hexByte(cmdBuffer+12);
-    startAddr &= 0x7fff; endAddr &= 0x7fff;
+    uint32_t startAddr = hexLong(cmdBuffer+2);
+    uint32_t endAddr   = hexLong(cmdBuffer+11);
+    uint8_t  ctrlByte  = hexByte(cmdBuffer+20);
     if (endAddr < startAddr) endAddr = startAddr;
-    uint16_t dataLength = endAddr - startAddr + 1;
+    uint32_t dataLength = endAddr - startAddr + 1;
 
     switch(cmd) {
       case 'i':   UART_println(IDENT); break;
