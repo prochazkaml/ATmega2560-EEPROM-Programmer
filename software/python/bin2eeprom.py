@@ -40,11 +40,11 @@ except:
     sys.stderr.write ('ERROR: File not found\n')
     sys.exit(1)
 
-if (startAddr < 0) or (startAddr > 0x7fff):
+if (startAddr < 0) or (startAddr > 0xffffffff):
     sys.stderr.write ('ERROR: Address out of range\n')
     sys.exit(1)
 
-if (startAddr + fileSize) > 0x8000:
+if (startAddr + fileSize - 1) > 0xffffffff:
     sys.stderr.write ('ERROR: Binary file doesn\'t fit into eeprom\n')
     sys.exit(1)
 
@@ -76,7 +76,7 @@ byteswritten = 0
 addr1 = startAddr
 
 while (datalength):
-    count = (addr1 | 0x3f) - addr1 + 1
+    count = (addr1 | 0x7f) - addr1 + 1
     if count > datalength:
         count = datalength
     addr2 = addr1 + count - 1

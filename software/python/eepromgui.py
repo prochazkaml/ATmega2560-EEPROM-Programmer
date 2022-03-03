@@ -121,7 +121,7 @@ def uploadBin():
     byteswritten = 0
     addr1 = startAddr
     while (datalength):
-        count = (addr1 | 0x3f) - addr1 + 1
+        count = (addr1 | 0x7f) - addr1 + 1
         if count > datalength:
             count = datalength
         addr2 = addr1 + count - 1
@@ -204,11 +204,19 @@ eepromType = IntVar()
 eepromType.set(0x1fff)
 
 typeFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
-Label(typeFrame, text = '1. Choose EEPROM type:').pack(pady = 5)
-Radiobutton(typeFrame, text = '28C64B ( 8k)', variable=eepromType,
+Label(typeFrame, text = '1. Choose EEPROM size:').pack(pady = 5)
+Radiobutton(typeFrame, text = '8k', variable=eepromType,
             value = 0x1fff).pack()
-Radiobutton(typeFrame, text = '28C256 (32k)', variable=eepromType,
+Radiobutton(typeFrame, text = '16k', variable=eepromType,
+            value = 0x3fff).pack()
+Radiobutton(typeFrame, text = '32k', variable=eepromType,
             value = 0x7fff).pack()
+Radiobutton(typeFrame, text = '64k', variable=eepromType,
+            value = 0xffff).pack()
+Radiobutton(typeFrame, text = '128k', variable=eepromType,
+            value = 0x1ffff).pack()
+Radiobutton(typeFrame, text = '256k', variable=eepromType,
+            value = 0x3ffff).pack()
 typeFrame.pack(padx = 10, pady = 10, ipadx = 5, ipady = 5, fill = 'x')
 
 actionFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')

@@ -26,7 +26,7 @@ except:
     sys.stderr.write('ERROR: Something wrong with the arguments\n')
     sys.exit(1)
 
-if not (0 <= startAddr <= endAddr <= 0x7fff):
+if not (0 <= startAddr <= endAddr <= 0xffffffff):
     sys.stderr.write('ERROR: Something wrong with the addresses\n')
     sys.exit(1)
 

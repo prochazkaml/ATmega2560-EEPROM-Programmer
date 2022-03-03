@@ -15,13 +15,12 @@ from serial.tools.list_ports import comports
 
 class Programmer(Serial):
     def __init__(self):
-        super().__init__(baudrate = 1000000, timeout = 1, write_timeout = 1)
+        super().__init__(baudrate = 500000, timeout = 1, write_timeout = 1)
         self.identify()
 
     def identify(self):
         pid = '1a86'
         hid = '7523'
-        did = 'EEPROM Programmer'
         for p in comports():
             if pid and hid in p.hwid:
                 self.port = p.device
@@ -38,18 +37,14 @@ class Programmer(Serial):
                     self.close()
                     continue
 
-                if data == did:
-                    self.readline()
-                    break
-                else:
-                    self.close()
+                self.readline()
 
 
     def sendcommand(self, cmd, startAddr=-1, endAddr=-1, ctrlByte=-1):
         if startAddr >= 0:
-            cmd += ' %04x' % startAddr
+            cmd += ' %08x' % startAddr
             if endAddr >= 0:
-                cmd += ' %04x' % endAddr
+                cmd += ' %08x' % endAddr
                 if ctrlByte >= 0:
                     cmd += ' %02x' % ctrlByte
         self.write((cmd + '\n').encode())

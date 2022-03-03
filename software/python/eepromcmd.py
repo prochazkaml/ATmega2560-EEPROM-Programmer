@@ -36,7 +36,7 @@ if cmd[0] not in ['i', 'v', 'a', 'd', 'f']:
     sys.stderr.write ('ERROR: Invalid command\n')
     sys.exit(1)
 
-if (startAddr > 0x7fff) or (endAddr > 0x7fff) or ctrlByte > (0xff):
+if (startAddr > 0xffffffff) or (endAddr > 0xffffffff) or ctrlByte > (0xff):
     sys.stderr.write ('ERROR: Invalid parameters\n')
     sys.exit(1)
 

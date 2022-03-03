@@ -16,10 +16,9 @@ import serial.tools.list_ports
 def getPort():
     pid = '1a86'
     hid = '7523'
-    did = 'EEPROM Programmer'
     port = None
 
-    print('Searching for ' + did + ' ...')
+    print('Searching for Programmer...')
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
         if pid and hid in p.hwid:
@@ -35,20 +34,16 @@ def getPort():
                 ser.close()
                 continue
 
-            if data == did:
-                port = p.device
-                print (did + ' found on port ' + port)
-                ser.readline()
-                ser.write (b'v\n')
-                print ('Firmware version: ' + ser.readline().decode().rstrip('\r\n'))
-                ser.readline()
-                ser.close()
-                break
-            else:
-                ser.close()
+            port = p.device
+            print ('Programmer found on port ' + port)
+            ser.readline()
+            ser.write (b'v\n')
+            print ('Firmware version: ' + ser.readline().decode().rstrip('\r\n'))
+            ser.readline()
+            ser.close()
 
     if not port:
-        print('ERROR: ' + did + ' not found')
+        print('ERROR: Programmer not found')
 
     return port
 
