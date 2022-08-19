@@ -16,8 +16,8 @@ from tkinter.ttk import *
 
 
 class Progressbox(Toplevel):
-    def __init__(self, root = None, title = 'Please wait !', 
-                activity = 'Doing stuff ...', value = 0):
+    def __init__(self, root = None, title = 'Please wait!', 
+                activity = 'Doing stuff...', value = 0):
         Toplevel.__init__(self, root)
         self.__step = IntVar()
         self.__step.set(value)
@@ -60,8 +60,33 @@ def getSelectedSize():
 def showContent():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found !')
+        messagebox.showerror('Error', 'EEPROM Programmer not found!')
         return
+
+    startAddr = 0
+    endAddr = getSelectedSize()
+
+    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from EEPROM...')
+
+    lines = []
+
+    eeprom.sendcommand ('r', startAddr, endAddr)
+    while (startAddr < endAddr):
+        bytesline = '%05x:  ' % startAddr
+        asciiline = ' '
+        i = 16
+        while(i):
+            data = eeprom.read(1)
+            if data:
+                bytesline += '%02x ' % data[0]
+                if (data[0] > 31) and data[0] < 127: asciiline += chr(data[0])
+                else: asciiline += '.'
+                i -= 1
+        lines.append(bytesline + asciiline)
+        startAddr += 16
+        progress.setvalue(startAddr * 100 // endAddr)
+
+    progress.destroy()
 
     contentWindow = Toplevel(mainWindow)
     contentWindow.title('EEPROM memory content')
@@ -76,22 +101,9 @@ def showContent():
     l['yscrollcommand'] = s.set
     s.pack(side='right', fill='y')
 
-    startAddr = 0
-    endAddr = getSelectedSize()
-    eeprom.sendcommand ('r', startAddr, endAddr)
-    while (startAddr < endAddr):
-        bytesline = '%05x:  ' % startAddr
-        asciiline = ' '
-        i = 16
-        while(i):
-            data = eeprom.read(1)
-            if data:
-                bytesline += '%02x ' % data[0]
-                if (data[0] > 31) and data[0] < 127: asciiline += chr(data[0])
-                else: asciiline += '.'
-                i -= 1
-        l.insert('end', bytesline + asciiline)
-        startAddr += 16
+    for line in lines:
+        l.insert('end', line)
+
     eeprom.readline()
     eeprom.close()
 
@@ -102,7 +114,7 @@ def showContent():
 def uploadBin():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found !')
+        messagebox.showerror('Error', 'EEPROM Programmer not found!')
         return
 
     maxAddr = getSelectedSize()
@@ -116,18 +128,18 @@ def uploadBin():
     try:
         f = open(fileName, 'rb')
     except:
-        messagebox.showerror('Error', 'Could not open file !')
+        messagebox.showerror('Error', 'Could not open file!')
         eeprom.close()
         return
 
     fileSize = os.stat(fileName).st_size
     if (startAddr + fileSize) > (maxAddr + 1):
-        messagebox.showerror('Error', 'Binary file doesn\'t fit into EEPROM !')
+        messagebox.showerror('Error', 'Binary file doesn\'t fit into EEPROM!')
         f.close()
         eeprom.close()
         return
 
-    progress = Progressbox(mainWindow, 'Please wait !', 'Writing data to EEPROM ...')
+    progress = Progressbox(mainWindow, 'Please wait!', 'Writing data to EEPROM...')
 
     eeprom.unlock()
 
@@ -149,7 +161,7 @@ def uploadBin():
 
     eeprom.lock()
 
-    progress.setactivity('Verifying written data ...')
+    progress.setactivity('Verifying written data...')
     f.seek(0)
     endAddr = startAddr + byteswritten - 1
     count = byteswritten
@@ -160,7 +172,7 @@ def uploadBin():
         if data:
             if data != f.read(1):
                 progress.close()
-                messagebox.showerror('Error', 'Verification failed !')
+                messagebox.showerror('Error', 'Verification failed!')
                 f.close()
                 eeprom.close()
                 return
@@ -171,18 +183,19 @@ def uploadBin():
     eeprom.close()
     progress.destroy()
     messagebox.showinfo('Mission accomplished', 
-                str(byteswritten) + ' bytes successfully written !')
+                str(byteswritten) + ' bytes successfully written!')
 
 
 def downloadBin():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found !')
+        messagebox.showerror('Error', 'EEPROM Programmer not found!')
         return
 
     startAddr = 0
     endAddr   = getSelectedSize()
     count     = endAddr - startAddr + 1
+    total     = count
 
     fileName = filedialog.asksaveasfilename(title = "Select output file",
                 filetypes = (("binary files","*.bin"),("all files","*.*")))
@@ -192,9 +205,11 @@ def downloadBin():
     try:
         f = open(fileName, 'wb')
     except:
-        messagebox.showerror('Error', 'Could not open file !')
+        messagebox.showerror('Error', 'Could not open file!')
         eeprom.close()
         return
+
+    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from EEPROM...')
 
     eeprom.sendcommand ('r', startAddr, endAddr)
     while (count):
@@ -202,10 +217,14 @@ def downloadBin():
         if data:
             f.write(data)
             count -= 1
+
+        progress.setvalue((total - count) * 100 // total)
+
     eeprom.readline()
     f.close()
     eeprom.close()
-    messagebox.showinfo('Mission accomplished', 'Download completed !')
+    progress.destroy()
+    messagebox.showinfo('Mission accomplished', 'Download completed!')
 
 
 mainWindow = Tk()
