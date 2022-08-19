@@ -45,6 +45,7 @@ On the microcontroller side, data is received via UART and written to the EEPROM
 |p 00000100 0000017f      |Page write binary data to memory page 00000100-0000017f (bytes must follow)|
 |l                |Lock EEPROM (enable write protection)|
 |u                |Unlock EEPROM (disable write protection)|
+|e                |Perform chip erase|
 
 Any serial monitor (set BAUD rate to 500000) can be used for control from the PC. However, in order to use the full capabilities, it is recommended to use the attached Python scripts. The script "eepromgui.py" offers a simple graphical user interface and functions for reading and writing binary files as well as for displaying the EEPROM content. The scripts have only been tested on Linux, but should work on all operating systems. A [driver for the CH330N/CH340N](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all#drivers-if-you-need-them) may be required for Windows if you are using cheap Arduino Mega clones.
 
