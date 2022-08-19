@@ -57,6 +57,22 @@ def getSelectedSize():
         return 0
 
 
+def chipErase():
+    eeprom = Programmer()
+    if not eeprom.is_open:
+        messagebox.showerror('Error', 'EEPROM Programmer not found!')
+        return
+
+    eeprom.sendcommand ('e')
+
+    eeprom.readline()
+    eeprom.close()
+
+    messagebox.showinfo('Mission accomplished', 
+                'Assuming the chip erase worked. Please check the contents if it is indeed the case.')
+    return
+
+
 def showContent():
     eeprom = Programmer()
     if not eeprom.is_open:
@@ -243,11 +259,16 @@ actionFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
 Label(actionFrame, text = '2. Take your action:').pack(pady = 5)
 Button(actionFrame, text = 'Show EEPROM Content', command = showContent
             ).pack(padx = 10, fill = 'x')
-Button(actionFrame, text = 'Binary file to EEPROM', command = uploadBin,
+Button(actionFrame, text = 'Binary file to EEPROM', command = uploadBin
             ).pack(padx = 10, fill = 'x')
-Button(actionFrame, text = 'EEPROM to binary file', command = downloadBin,
+Button(actionFrame, text = 'EEPROM to binary file', command = downloadBin
             ).pack(padx = 10, fill = 'x')
-actionFrame.pack(padx =10, ipadx = 5, ipady = 5, fill = 'x')
+actionFrame.pack(padx =10, pady = (0, 10), ipadx = 5, ipady = 5, fill = 'x')
+
+eraseFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
+Button(eraseFrame, text = 'PERFORM CHIP ERASE', command = chipErase
+            ).pack(padx = 10, pady = 10, fill = 'x')
+eraseFrame.pack(padx =10, ipadx = 5, fill = 'x')
 
 Button(mainWindow, text = 'Exit', command = mainWindow.quit).pack(pady = 10)
 

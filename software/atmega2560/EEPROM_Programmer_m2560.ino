@@ -1,7 +1,7 @@
 // Parallel EEPROM Programmer for 28C256 and 28C64B - for ATmega328P
 //
 // This version of the software implements:
-// - Hardware SPI with 8 Mbps to control address bus via shift registers
+// - Direct address bus access
 // - Hardware UART with 1 Mbps for data transfer to/from PC via USB 2.0
 // - Fast page write mode
 // - Access via serial monitor
@@ -195,7 +195,7 @@ uint32_t hexLong(char* data) {
 // Low Level Communication with EEPROM
 // -----------------------------------------------------------------------------
 
-// Shift out address by using hardware SPI
+// Set the address
 void setAddress (uint32_t addr) { 
   ADDL_PORT = addr;
   ADDH_PORT = addr >> 8;
@@ -258,6 +258,19 @@ void writePage (uint32_t addr, uint8_t count) {
 // -----------------------------------------------------------------------------
 // High Level EEPROM Functions
 // -----------------------------------------------------------------------------
+
+// Write the special six-byte code to perform a chip erase
+void chipErase() {
+  setDataBusWrite;                            // set data bus pins as output 
+  setByte (0x5555, 0xaa);                     // write code sequence
+  setByte (0x2aaa, 0x55);
+  setByte (0x5555, 0x80);
+  setByte (0x5555, 0xaa);
+  setByte (0x2aaa, 0x55);
+  setByte (0x5555, 0x10);
+  setDataBusRead;                             // release data bus (set as input)
+  _delay_ms(100);                             // wait enough time
+}
 
 // Write the special six-byte code to turn off software data protection
 void disableWriteProtection() {
@@ -382,6 +395,7 @@ int main(void) {
       case 'p':   writePageBinary(startAddr, dataLength); break;
       case 'l':   enableWriteProtection(); break;
       case 'u':   disableWriteProtection(); break;
+      case 'e':   chipErase(); break;
       default:    break;    
     }
   }
