@@ -42,6 +42,21 @@ class Progressbox(Toplevel):
         self.update_idletasks()
 
 
+def getSelectedSize():
+    sizestr = eepromType.get()
+    sizenum = int(sizestr[:-1])
+    unit = sizestr[-1]
+
+    if unit == "b":
+        return sizenum - 1
+    elif unit == "k":
+        return sizenum * 1024 - 1
+    elif unit == "M":
+        return sizenum * 1024 * 1024 - 1
+    else:
+        return 0
+
+
 def showContent():
     eeprom = Programmer()
     if not eeprom.is_open:
@@ -55,17 +70,17 @@ def showContent():
     contentWindow.transient(mainWindow)
     contentWindow.grab_set()
 
-    l = Listbox(contentWindow, font = 'TkFixedFont', height = 36, width = 72)
+    l = Listbox(contentWindow, font = 'TkFixedFont', height = 36, width = 73)
     l.pack(side='left', fill=BOTH)
     s = Scrollbar(contentWindow, orient = VERTICAL, command = l.yview)
     l['yscrollcommand'] = s.set
     s.pack(side='right', fill='y')
 
     startAddr = 0
-    endAddr = eepromType.get()
+    endAddr = getSelectedSize()
     eeprom.sendcommand ('r', startAddr, endAddr)
     while (startAddr < endAddr):
-        bytesline = '%04x:  ' % startAddr
+        bytesline = '%05x:  ' % startAddr
         asciiline = ' '
         i = 16
         while(i):
@@ -84,14 +99,13 @@ def showContent():
     contentWindow.quit()
 
 
-
 def uploadBin():
     eeprom = Programmer()
     if not eeprom.is_open:
         messagebox.showerror('Error', 'EEPROM Programmer not found !')
         return
 
-    maxAddr = eepromType.get()
+    maxAddr = getSelectedSize()
     startAddr = 0
 
     fileName = filedialog.askopenfilename(title = "Select binary file for upload",
@@ -167,7 +181,7 @@ def downloadBin():
         return
 
     startAddr = 0
-    endAddr   = eepromType.get()
+    endAddr   = getSelectedSize()
     count     = endAddr - startAddr + 1
 
     fileName = filedialog.asksaveasfilename(title = "Select output file",
@@ -194,29 +208,16 @@ def downloadBin():
     messagebox.showinfo('Mission accomplished', 'Download completed !')
 
 
-
-
 mainWindow = Tk()
 mainWindow.title('EEPROM Programmer')
 mainWindow.resizable(width=False, height=False)
 
-eepromType = IntVar()
-eepromType.set(0x1fff)
+eepromType = StringVar()
+eepromTypes = ["8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M"]
 
 typeFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
 Label(typeFrame, text = '1. Choose EEPROM size:').pack(pady = 5)
-Radiobutton(typeFrame, text = '8k', variable=eepromType,
-            value = 0x1fff).pack()
-Radiobutton(typeFrame, text = '16k', variable=eepromType,
-            value = 0x3fff).pack()
-Radiobutton(typeFrame, text = '32k', variable=eepromType,
-            value = 0x7fff).pack()
-Radiobutton(typeFrame, text = '64k', variable=eepromType,
-            value = 0xffff).pack()
-Radiobutton(typeFrame, text = '128k', variable=eepromType,
-            value = 0x1ffff).pack()
-Radiobutton(typeFrame, text = '256k', variable=eepromType,
-            value = 0x3ffff).pack()
+OptionMenu(typeFrame, eepromType, eepromTypes[0], *eepromTypes).pack()
 typeFrame.pack(padx = 10, pady = 10, ipadx = 5, ipady = 5, fill = 'x')
 
 actionFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
