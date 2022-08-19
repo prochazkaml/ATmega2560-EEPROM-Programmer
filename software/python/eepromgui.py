@@ -69,7 +69,7 @@ def chipErase():
     eeprom.close()
 
     messagebox.showinfo('Mission accomplished', 
-                'Assuming the chip erase worked. Please check the contents if it is indeed the case.')
+                'Assuming the chip erase worked.\n\nPlease check its contents to see if it is indeed the case (all bytes should display FF).')
     return
 
 
