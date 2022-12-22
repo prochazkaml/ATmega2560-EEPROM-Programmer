@@ -105,7 +105,7 @@ The scripts have only been tested on Linux, but should work on all operating sys
 - Open "EEPROM_Programmer_m2560.ino" sketch in the "software" folder and click **Upload**.
 
 ## Python GUI
-### Using Anaconda/Miniconda on Windows 10
+### Using Anaconda/Miniconda on Windows 10 (Should work on other OS too)
 - Create new anaconda enviornment and install necessary libraries
 ```
 conda create -n eeprom python=3.9
@@ -118,10 +118,14 @@ pip install pyserial
         hid = '0042'
 ```        
 
-- Run GUI "eepromgui.py". Don't forget to activate correct anaconda environment with `conda activate eeprom` before running. 
+- Run GUI "eepromgui.py" (screenshot shown below). Don't forget to activate correct anaconda environment with `conda activate eeprom` before running. 
 ```
 python eepromgui.py
 ```
+![bios_flash.jpg](https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/bios_flash.jpg)
+
+## Tips for programming
+- After programming, read the content of the EEPROM and save it as a binary file. Then, use a HEX comparision tool (like [Beyond Compare](https://www.scootersoftware.com/v4help/index.html?viewhex.html)) to verify the content of the chip before using it on another circuit.
 
 <!---
 ### If using the precompiled hex-file
