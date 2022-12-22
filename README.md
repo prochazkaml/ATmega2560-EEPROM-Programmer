@@ -125,7 +125,7 @@ pip install pyserial
 ```
 python eepromgui.py
 ```
-<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/bios_flash.jpg" width=40% height=40%>
+<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/bios_flash.jpg" width=60% height=60%>
 
 ## Tips for programming
 - After programming, read the content of the EEPROM and save it as a binary file. Then, use a HEX comparision tool (like [Beyond Compare](https://www.scootersoftware.com/v4help/index.html?viewhex.html)) to verify the content of the chip before using it on another circuit.
