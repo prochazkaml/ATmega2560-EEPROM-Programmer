@@ -50,6 +50,9 @@ SST29EE020 to ATmega2560 connections are shown in below table ([ATmega2560 Pinou
 |31      |WE#        |Digital pin 41|PG0        |
 |32      |VCC        |5V            |5V         |  
 
+<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_1.jpg" width=40% height=40%> 
+<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_2.jpg" width=40% height=40%>
+
 <!---
 # What are EEPROMs?
 The EEPROM is accessed like a Static RAM for the read or write cycle without the need for external components. Many EEPROMs contain a 128-byte page register to allow writing of up to 128 bytes simultaneously. The end of a write cycle can be detected by data polling. Once the end of a write cycle has been detected a new access for a read or write can begin.
