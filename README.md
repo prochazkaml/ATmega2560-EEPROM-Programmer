@@ -50,8 +50,8 @@ SST29EE020 to ATmega2560 connections are shown in below table ([ATmega2560 Pinou
 |31      |WE#        |Digital pin 41|PG0        |
 |32      |VCC        |5V            |5V         |  
 
-<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_1.jpg" width=40% height=40%> 
-<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_2.jpg" width=40% height=40%>
+<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_1.jpg" width=60% height=60%> 
+<img src="https://raw.githubusercontent.com/prabathbr/ATmega2560-EEPROM-Programmer/master/documentation/arduino_connection_2.jpg" width=60% height=60%>
 
 <!---
 # What are EEPROMs?
