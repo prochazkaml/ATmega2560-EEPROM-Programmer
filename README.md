@@ -50,7 +50,7 @@ SST29EE020 to ATmega2560 connections are shown in below table ([ATmega2560 Pinou
 |31      |WE#        |Digital pin 41|PG0        |
 |32      |VCC        |5V            |5V         |  
 
-
+<!---
 # What are EEPROMs?
 The EEPROM is accessed like a Static RAM for the read or write cycle without the need for external components. Many EEPROMs contain a 128-byte page register to allow writing of up to 128 bytes simultaneously. The end of a write cycle can be detected by data polling. Once the end of a write cycle has been detected a new access for a read or write can begin.
 An optional software data protection mechanism is available to guard against inadvertent writes.
@@ -67,6 +67,7 @@ The A0 to A6 inputs are used to specify which bytes within the page are to be wr
 ## Data Polling
 The EEPROM features DATA Polling to indicate the end of a write cycle. During a byte or page write cycle an attempted read of the last byte written will result in the complement of the written data to be presented on I/O7. Once the write cycle has been completed, true data is valid on all outputs, and the next write cycle may begin. DATA Polling may begin at anytime during the write cycle.
 In addition to DATA Polling the EEPROM provides another method for determining the end of a write cycle. During the write operation, successive attempts to read data from the device will result in I/O6 toggling between one and zero. Once the write has completed, I/O6 will stop toggling and valid data will be read. Reading the toggle bit may begin at any time during the write cycle.
+--->
 
 # Software
 ## Implementation
