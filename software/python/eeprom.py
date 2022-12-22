@@ -19,8 +19,8 @@ class Programmer(Serial):
         self.identify()
 
     def identify(self):
-        pid = '1a86'
-        hid = '7523'
+        pid = '2341'
+        hid = '0042'
         for p in comports():
             if pid and hid in p.hwid:
                 self.port = p.device
