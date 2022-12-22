@@ -7,11 +7,49 @@ Parallel EEPROM Programmer for SST29EE020 (and possibly others which use 128 byt
 - Utilizing the fast page write mode of the EEPROM
 - Binary data transmission
 
-![EEPROM_hw1.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw1.jpeg)
-![EEPROM_hw2.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw2.jpeg)
+<!--- ![EEPROM_hw1.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw1.jpeg) --->
+<!--- ![EEPROM_hw2.jpeg](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_hw2.jpeg) --->
 
 # Hardware
-The heart of the EEPROM programmer is an ATmega2560 microcontroller. The address bus of the EEPROM (up to 20 bit in the current configuration, with modifications 32 bits are possible) as well as the data bus is controlled directly via the pins of the ATmega. The data connection to the PC runs via the hardware UART interface of the ATmega transfering the data in binary format with up to 500 Kbps.
+The heart of the EEPROM programmer is an ATmega2560 microcontroller. The address bus of the EEPROM (up to 20 bit in the current configuration, with modifications 32 bits are possible) as well as the data bus is controlled directly via the pins of the ATmega. The data connection to the PC runs via the hardware UART interface of the ATmega transfering the data in binary format with up to 500 Kbps.    
+
+SST29EE020 to ATmega2560 connections are shown in below table ([ATmega2560 Pinout](https://docs.arduino.cc/hacking/hardware/PinMapping2560)). A simple PLCC32 to DIP32 adapter board ([See example](http://forums.xgecu.com/redirect.php?tid=19&goto=lastpost#lastpost)) can be used with a PLCC32 EEPROM. Such adapter with model number "ASQ906" is used here, which is cheaply avaialble from AliExpress. These would have 1-to-1 pin mapping from PLCC32 to DIP32. Please recheck the pin mapping of your adapter before connecting EEPROM as there could be some adapters with different pin mapping from PLCC32 to DIP32.    
+
+|Chip Pin|Description|Arduino PIN   |Description|
+|--------|-----------|--------------|-----------|
+|1       |NC         |N/A           |N/A        |
+|2       |A16        |Digital pin 53|PB0        |
+|3       |A15        |Digital pin 30|PC7        |
+|4       |A12        |Digital pin 33|PC4        |
+|5       |A7         |Digital pin 29|PA7        |
+|6       |A6         |Digital pin 28|PA6        |
+|7       |A5         |Digital pin 27|PA5        |
+|8       |A4         |Digital pin 26|PA4        |
+|9       |A3         |Digital pin 25|PA3        |
+|10      |A2         |Digital pin 24|PA2        |
+|11      |A1         |Digital pin 23|PA1        |
+|12      |A0         |Digital pin 22|PA0        |
+|13      |DQ0        |Digital pin 49|PL0        |
+|14      |DQ1        |Digital pin 48|PL1        |
+|15      |DQ2        |Digital pin 47|PL2        |
+|16      |VSS        |GND           |GROUND     |
+|17      |DQ3        |Digital pin 46|PL3        |
+|18      |DQ4        |Digital pin 45|PL4        |
+|19      |DQ5        |Digital pin 44|PL5        |
+|20      |DQ6        |Digital pin 43|PL6        |
+|21      |DQ7        |Digital pin 42|PL7        |
+|22      |CE#        |Digital pin 39|PG2        |
+|23      |A10        |Digital pin 35|PC2        |
+|24      |OE#        |Digital pin 40|PG1        |
+|25      |A11        |Digital pin 34|PC3        |
+|26      |A9         |Digital pin 36|PC1        |
+|27      |A8         |Digital pin 37|PC0        |
+|28      |A13        |Digital pin 32|PC5        |
+|29      |A14        |Digital pin 31|PC6        |
+|30      |A17        |Digital pin 52|PB1        |
+|31      |WE#        |Digital pin 41|PG0        |
+|32      |VCC        |5V            |5V         |  
+
 
 # What are EEPROMs?
 The EEPROM is accessed like a Static RAM for the read or write cycle without the need for external components. Many EEPROMs contain a 128-byte page register to allow writing of up to 128 bytes simultaneously. The end of a write cycle can be detected by data polling. Once the end of a write cycle has been detected a new access for a read or write can begin.
