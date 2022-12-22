@@ -99,11 +99,10 @@ The scripts have only been tested on Linux, but should work on all operating sys
 
 ## Compiling and Uploading Arduino Code
 ### Using the Arduino IDE
-- Open "EEPROM_Programmer_m2560.ino" file in the "software" folder.
 - Go to **Tools -> Board -> Arduino AVR Boards** and select **Arduino Mega or Mega 2560**.
 - Go to **Tools -> Processor** and select **ATmega2560 (Mega 2560)**.
 - Connect your Arduino Mega to your PC.
-- Open EEPROM_Programmer sketch and click **Upload**.
+- Open "EEPROM_Programmer_m2560.ino" sketch in the "software" folder and click **Upload**.
 
 ## Python GUI
 ### Using Anaconda/Miniconda on Windows 10
