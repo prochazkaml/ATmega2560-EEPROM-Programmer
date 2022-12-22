@@ -86,18 +86,44 @@ On the microcontroller side, data is received via UART and written to the EEPROM
 |u                |Unlock EEPROM (disable write protection)|
 |e                |Perform chip erase|
 
-Any serial monitor (set BAUD rate to 500000) can be used for control from the PC. However, in order to use the full capabilities, it is recommended to use the attached Python scripts. The script "eepromgui.py" offers a simple graphical user interface and functions for reading and writing binary files as well as for displaying the EEPROM content. The scripts have only been tested on Linux, but should work on all operating systems. A [driver for the CH330N/CH340N](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all#drivers-if-you-need-them) may be required for Windows if you are using cheap Arduino Mega clones.
+Any serial monitor (set BAUD rate to 500000) can be used for control from the PC. However, in order to use the full capabilities, it is recommended to use the attached Python scripts.   
+
+The script "eepromgui.py" offers a simple graphical user interface and functions for reading and writing binary files as well as for displaying the EEPROM content. 
+
+<!--- 
+The scripts have only been tested on Linux, but should work on all operating systems. A [driver for the CH330N/CH340N](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all#drivers-if-you-need-them) may be required for Windows if you are using cheap Arduino Mega clones.
 
 ![EEPROM_sw1.png](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_sw1.png)
-![EEPROM_sw2.png](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_sw2.png)
+![EEPROM_sw2.png](https://raw.githubusercontent.com/prochazkaml/ATmega2560-EEPROM-Programmer/master/documentation/EEPROM_sw2.png) 
+--->
 
-## Compiling and Uploading
-### If using the Arduino IDE
+## Compiling and Uploading Arduino Code
+### Using the Arduino IDE
 - Go to **Tools -> Board -> Arduino AVR Boards** and select **Arduino Mega or Mega 2560**.
 - Go to **Tools -> Processor** and select **ATmega2560 (Mega 2560)**.
 - Connect your Arduino Mega to your PC.
 - Open EEPROM_Programmer sketch and click **Upload**.
 
+## Python GUI
+### Using Anaconda/Miniconda on Windows 10
+- Create new anaconda enviornment and install necessary libraries
+```
+conda create -n eeprom python=3.9
+conda activate eeprom
+pip install pyserial
+```
+- Check whether USB-to-Serial PID/VID is correct at `eeprom.py`, change it according to your Arduino. Belows shows the default value for Arduino Mega with ATMEL USB-to-Serial chip.
+```
+        pid = '2341'
+        hid = '0042'
+```        
+
+- Run GUI "eepromgui.py". Don't forget to activate correct anaconda environment with `conda activate eeprom` before running. 
+```
+python eepromgui.py
+```
+
+<!---
 ### If using the precompiled hex-file
 - Make sure you have installed [avrdude](https://learn.adafruit.com/usbtinyisp/avrdude).
 - Connect your Arduino Mega to your PC.
@@ -114,6 +140,8 @@ Any serial monitor (set BAUD rate to 500000) can be used for control from the PC
 - Open a terminal.
 - Navigate to the folder with the makefile and the Arduino sketch.
 - Run "make upload" to compile and upload the firmware.
+
+--->
 
 # License
 ![license.png](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)
