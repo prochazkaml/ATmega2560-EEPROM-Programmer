@@ -1,4 +1,4 @@
-// Parallel EEPROM Programmer for 28C256 and 28C64B - for ATmega328P
+// Parallel EEPROM Programmer for SST29EE020 and compatible devices - for ATmega2560
 //
 // This version of the software implements:
 // - Direct address bus access
@@ -12,7 +12,7 @@
 // - v                  - print firmware version
 // - a 0100             - set address bus to 0100 (hex) (for test purposes)
 // - d 0000 7fff        - print hex dump of memory addresses 0000-7fff (hex)
-// - f 1000 1fff ff     - fill memory (1000-1fff) with value ff (hex)
+// - e                  - perform chip erase
 //
 // Usage examples for binary data transmissions:
 // (do not use these commands via serial monitor !!!)
@@ -21,20 +21,12 @@
 // - l                  - lock EEPROM (enable write protection)
 // - u                  - unlock EEPROM (disable write protection)
 // 
-// Core:          MiniCore (https://github.com/MCUdude/MiniCore)
-// Board:         ATmega328
-// Clock:         External 16 MHz
-// BOD:           BOD 4.3V
-// Compiler LTO:  LTO enabled
-// Variant:       328P / 328PA
-// Bootloader:    No bootloader
-// Leave the rest on default settings. Don't forget to "Burn bootloader"!
-// No Arduino core functions or libraries are used. Use the makefile if 
-// you want to compile without Arduino IDE.
+// See README.md for more info.
 //
-// 2019 by Stefan Wagner 
+// 2019 by Stefan Wagner, 2022 Michal Procházka
 // Project Files (EasyEDA): https://easyeda.com/wagiminator
 // Project Files (Github):  https://github.com/wagiminator
+//                          https://github.com/prochazkaml
 // License: http://creativecommons.org/licenses/by-sa/3.0/
 
 #ifndef __AVR_ATmega2560__
@@ -88,7 +80,7 @@
 #define delay125ns      {asm volatile("nop"); asm volatile("nop");}
 
 // Buffers
-uint8_t pageBuffer[128];                       // page buffer
+uint8_t pageBuffer[4096];                     // page buffer
 char    cmdBuffer[32];                        // command buffer
 
 // -----------------------------------------------------------------------------
@@ -240,8 +232,9 @@ void writeDataByte (uint32_t addr, uint8_t value) {
   waitWriteCycle (value);                     // wait for write cycle to finish
 }
 
-// Write up to 64 bytes; bytes have to be page aligned (28C256 and 26C64B only)
-void writePage (uint32_t addr, uint8_t count) {
+// Write up to 256 bytes to EEPROM; bytes have to be page aligned
+// Compatible with SST29*E0*0 devices
+void writePageEEPROM (uint32_t addr, uint8_t count) {
   if (!count) return;                         // return if no bytes to write
   LEDon;                                      // turn on write LED
   setDataBusWrite;                            // set data bus pins as output
@@ -254,6 +247,27 @@ void writePage (uint32_t addr, uint8_t count) {
   waitWriteCycle (pageBuffer[count-1]);       // wait for write cycle to finish
   LEDoff;                                     // turn off write LED
 }
+
+// Write up to 256 bytes to flash, pages don't matter
+// Compatible with SST39*F0*0 devices
+void writePageFlash (uint32_t addr, uint8_t count) {
+  if (!count) return;                         // return if no bytes to write
+  LEDon;                                      // turn on write LED
+  setDataBusWrite;                            // set data bus pins as output
+  
+  for (uint8_t i=0; i<count; i++) {           // write <count> numbers of bytes to flash
+    setByte (0x5555, 0xaa);                   // write code sequence
+    setByte (0x2aaa, 0x55);
+    setByte (0x5555, 0xa0);
+    setByte (addr++, pageBuffer[i]);
+    _delay_us(20);
+  }
+
+  setDataBusRead;                             // release data bus (set as input)
+  LEDoff;                                     // turn off write LED
+}
+
+void (*writePage)(uint32_t, uint8_t) = &writePageEEPROM;
 
 // -----------------------------------------------------------------------------
 // High Level EEPROM Functions
@@ -295,22 +309,6 @@ void enableWriteProtection() {
   _delay_ms(10);                              // wait write cycle time
 }
 
-// Fill specified part of EEPROM memory with the given value
-void fillMemory(uint32_t addr, uint32_t dataLength, uint8_t value) {
-  uint32_t addr2; uint8_t  count;             // initialize variables
-  for (uint8_t i=0; i<64; i++) pageBuffer[i] = value; // fill page buffer with value
-  disableWriteProtection();                   // disable write protection
-  while (dataLength) {                        // repeat until all bytes written
-    addr2 = addr | 0x7f;                      // addr2 = end of current page
-    count = addr2 - addr + 1;                 // number of bytes to fill rest of page
-    if (count > dataLength) count = dataLength; // make sure not to write too many bytes
-    writePage (addr, count);                  // fill page with data
-    addr += count;                            // next page address
-    dataLength -= count;                      // decrease number of bytes to write
-  }
-  enableWriteProtection();                    // enable write protection
-}
-
 // Read content of EEPROM and print hex dump via UART
 void printContents(uint32_t addr, uint32_t count) {
   static char ascii[17];                      // buffer string
@@ -346,7 +344,7 @@ void writePageBinary(uint32_t startAddr, uint8_t count) {
     while (!UART_available());
     pageBuffer[i] = UART_read();
   }
-  writePage (startAddr, count);
+  (*writePage)(startAddr, count);
 }
 
 // -----------------------------------------------------------------------------
@@ -381,7 +379,6 @@ int main(void) {
     char cmd = cmdBuffer[0];
     uint32_t startAddr = hexLong(cmdBuffer+2);
     uint32_t endAddr   = hexLong(cmdBuffer+11);
-    uint8_t  ctrlByte  = hexByte(cmdBuffer+20);
     if (endAddr < startAddr) endAddr = startAddr;
     uint32_t dataLength = endAddr - startAddr + 1;
 
@@ -390,12 +387,13 @@ int main(void) {
       case 'v':   UART_println(VERSION); break;
       case 'a':   setAddress(startAddr); break;
       case 'd':   printContents(startAddr, dataLength); break;
-      case 'f':   fillMemory(startAddr, dataLength, ctrlByte); break;
       case 'r':   readBinary(startAddr, dataLength); break;
       case 'p':   writePageBinary(startAddr, dataLength); break;
       case 'l':   enableWriteProtection(); break;
       case 'u':   disableWriteProtection(); break;
       case 'e':   chipErase(); break;
+      case 'E':   writePage = &writePageEEPROM; break;
+      case 'F':   writePage = &writePageFlash; break;
       default:    break;    
     }
   }
