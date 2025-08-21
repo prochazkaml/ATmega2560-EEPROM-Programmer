@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-# EEPROM Programmer - eepromgui
+# EEPROM/Flash Programmer - eepromgui
 #
 # A simple GUI based on tkinter to interface with the EERPOM programmer.
 #
 # pySerial and tkinter (8.6 or newer) need to be installed
 #
-# 2020 by Stefan Wagner
+# 2020 by Stefan Wagner, 2022 Michal Procházka
 
 import os
 from eeprom  import Programmer
@@ -43,7 +43,7 @@ class Progressbox(Toplevel):
 
 
 def getSelectedSize():
-    sizestr = eepromType.get()
+    sizestr = deviceSize.get()
     sizenum = int(sizestr[:-1])
     unit = sizestr[-1]
 
@@ -60,7 +60,7 @@ def getSelectedSize():
 def chipErase():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found!')
+        messagebox.showerror('Error', 'Programmer not found!')
         return
 
     eeprom.sendcommand ('e')
@@ -76,13 +76,13 @@ def chipErase():
 def showContent():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found!')
+        messagebox.showerror('Error', 'Programmer not found!')
         return
 
     startAddr = 0
     endAddr = getSelectedSize()
 
-    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from EEPROM...')
+    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from device...')
 
     lines = []
 
@@ -105,7 +105,7 @@ def showContent():
     progress.destroy()
 
     contentWindow = Toplevel(mainWindow)
-    contentWindow.title('EEPROM memory content')
+    contentWindow.title('Device memory content')
     contentWindow.minsize(200, 100)
     contentWindow.resizable(width=False, height=True)
     contentWindow.transient(mainWindow)
@@ -130,7 +130,7 @@ def showContent():
 def uploadBin():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found!')
+        messagebox.showerror('Error', 'Programmer not found!')
         return
 
     maxAddr = getSelectedSize()
@@ -150,20 +150,27 @@ def uploadBin():
 
     fileSize = os.stat(fileName).st_size
     if (startAddr + fileSize) > (maxAddr + 1):
-        messagebox.showerror('Error', 'Binary file doesn\'t fit into EEPROM!')
+        messagebox.showerror('Error', 'Binary file doesn\'t fit into the device!')
         f.close()
         eeprom.close()
         return
 
-    progress = Progressbox(mainWindow, 'Please wait!', 'Writing data to EEPROM...')
+    progress = Progressbox(mainWindow, 'Please wait!', 'Writing data to device...')
 
-    eeprom.unlock()
+    dt = deviceType.get()[0]
+
+    eeprom.sendcommand(dt)
+    eeprom.readline()
+
+    if dt == "E": eeprom.unlock()
+
+    pagesize = int(devicePage.get().split(" ")[0]) - 1
 
     datalength = fileSize
     byteswritten = 0
     addr1 = startAddr
     while (datalength):
-        count = (addr1 | 0x7f) - addr1 + 1
+        count = (addr1 | pagesize) - addr1 + 1
         if count > datalength:
             count = datalength
         addr2 = addr1 + count - 1
@@ -175,7 +182,7 @@ def uploadBin():
         addr1 += count
         datalength -= count
 
-    eeprom.lock()
+    if dt == "E": eeprom.lock()
 
     progress.setactivity('Verifying written data...')
     f.seek(0)
@@ -187,7 +194,7 @@ def uploadBin():
         data = eeprom.read(1)
         if data:
             if data != f.read(1):
-                progress.close()
+                progress.destroy()
                 messagebox.showerror('Error', 'Verification failed!')
                 f.close()
                 eeprom.close()
@@ -205,7 +212,7 @@ def uploadBin():
 def downloadBin():
     eeprom = Programmer()
     if not eeprom.is_open:
-        messagebox.showerror('Error', 'EEPROM Programmer not found!')
+        messagebox.showerror('Error', 'Programmer not found!')
         return
 
     startAddr = 0
@@ -225,7 +232,7 @@ def downloadBin():
         eeprom.close()
         return
 
-    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from EEPROM...')
+    progress = Progressbox(mainWindow, 'Please wait!', 'Reading data from device...')
 
     eeprom.sendcommand ('r', startAddr, endAddr)
     while (count):
@@ -244,24 +251,30 @@ def downloadBin():
 
 
 mainWindow = Tk()
-mainWindow.title('EEPROM Programmer')
+mainWindow.title('EEPROM/Flash Programmer')
 mainWindow.resizable(width=False, height=False)
 
-eepromType = StringVar()
-eepromTypes = ["8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M"]
+deviceSize = StringVar()
+deviceSizes = ["1k", "2k", "4k", "8k", "16k", "32k", "64k", "128k", "256k", "512k", "1M"]
+deviceType = StringVar()
+deviceTypes = ["EEPROM", "Flash"]
+devicePage = StringVar()
+devicePages = ["1 byte/page", "2 bytes/page", "4 bytes/page", "8 bytes/page", "16 bytes/page", "32 bytes/page", "64 bytes/page", "128 bytes/page", "256 bytes/page", "512 bytes/page", "1024 bytes/page", "2048 bytes/page", "4096 bytes/page"]
 
 typeFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
-Label(typeFrame, text = '1. Choose EEPROM size:').pack(pady = 5)
-OptionMenu(typeFrame, eepromType, eepromTypes[0], *eepromTypes).pack()
+Label(typeFrame, text = '1. Specify device:').pack(pady = 5)
+OptionMenu(typeFrame, deviceSize, deviceSizes[5], *deviceSizes).pack(padx = 10, fill = 'x')
+OptionMenu(typeFrame, deviceType, deviceTypes[0], *deviceTypes).pack(padx = 10, fill = 'x', pady = (10, 0))
+OptionMenu(typeFrame, devicePage, devicePages[7], *devicePages).pack(padx = 10, fill = 'x', pady = (10, 0))
 typeFrame.pack(padx = 10, pady = 10, ipadx = 5, ipady = 5, fill = 'x')
 
 actionFrame = Frame(mainWindow, borderwidth = 2, relief = 'groove')
 Label(actionFrame, text = '2. Take your action:').pack(pady = 5)
-Button(actionFrame, text = 'Show EEPROM Content', command = showContent
+Button(actionFrame, text = 'Show device content', command = showContent
             ).pack(padx = 10, fill = 'x')
-Button(actionFrame, text = 'Binary file to EEPROM', command = uploadBin
+Button(actionFrame, text = 'Binary file to device', command = uploadBin
             ).pack(padx = 10, fill = 'x')
-Button(actionFrame, text = 'EEPROM to binary file', command = downloadBin
+Button(actionFrame, text = 'Device to binary file', command = downloadBin
             ).pack(padx = 10, fill = 'x')
 actionFrame.pack(padx =10, pady = (0, 10), ipadx = 5, ipady = 5, fill = 'x')
 
